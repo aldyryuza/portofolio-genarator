@@ -1,5 +1,7 @@
 # Deployment checklist
 
+Prefer containers? Follow [`docs/DOCKER.md`](DOCKER.md); the environment and post-deploy checks below still apply.
+
 Single Laravel monolith; no queue worker is required (exports and mail run synchronously).
 
 ## Server requirements

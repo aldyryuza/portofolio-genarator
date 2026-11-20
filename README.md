@@ -27,6 +27,7 @@ php artisan serve             # admin: /login
 
 ## Dokumentasi
 
+- [`docs/DOCKER.md`](docs/DOCKER.md) — deploy dengan Docker Compose (sudah diuji)
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — checklist production
 - [`docs/BACKUP.md`](docs/BACKUP.md) — backup & restore (sudah diuji)
 - [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md) — fitur, status acceptance, batasan

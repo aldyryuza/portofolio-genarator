@@ -13,15 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trusted proxies come from config/trustedproxy.php (TRUSTED_PROXIES).
         $middleware->web(append: [SecurityHeaders::class]);
-
-        // Behind a reverse proxy (e.g. the Docker setup) set TRUSTED_PROXIES so HTTPS,
-        // client IPs and URLs are detected from X-Forwarded-* headers. Unset = trust none.
-        $trustedProxies = (string) env('TRUSTED_PROXIES', '');
-
-        if ($trustedProxies !== '') {
-            $middleware->trustProxies(at: $trustedProxies === '*' ? '*' : array_map('trim', explode(',', $trustedProxies)));
-        }
 
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('admin.dashboard'));

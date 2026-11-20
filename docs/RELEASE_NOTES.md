@@ -17,7 +17,7 @@ First complete release of the Personal Portfolio CMS: a single-owner admin, a pu
 | M5 | Versioned CVs with gated downloads; contact form with honeypot, time-trap and throttling; admin inbox with mail notification |
 | M6 | PDF and PPTX portfolio exports with presets, themes, English/Indonesian headings, owner-only downloads |
 | M7 | Nonce-based CSP and HSTS, accessibility fixes, scheduled storage pruning, MySQL CI job, deployment and backup docs |
-| M7.1 | Light/dark theme (follows the OS, toggle remembered per browser) on the public site, admin and login; self-hosted WOFF2 fonts; stateless `robots.txt`/`sitemap.xml` |
+| M7.1 | Light/dark theme (follows the OS, toggle remembered per browser) on the public site, admin and login; self-hosted WOFF2 fonts; stateless `robots.txt`/`sitemap.xml`; Docker images and Compose stack (`docs/DOCKER.md`), `TRUSTED_PROXIES` support |
 
 ## Acceptance criteria (`docs/ACCEPTANCE.md`)
 
