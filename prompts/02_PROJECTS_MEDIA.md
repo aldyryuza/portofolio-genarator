@@ -1,0 +1,1 @@
+Implementasikan M2 lalu M3 secara bertahap. Project CRUD draft/published, slug unique, category/tag/skills, featured, sortable, case study, gallery. Upload image aman, private/public storage, server-side validation, alt text, embed video hanya provider allowlist. Semua mutation owner-only; test authorization, file upload, publish visibility, route model binding.

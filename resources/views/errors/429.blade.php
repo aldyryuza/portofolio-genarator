@@ -1,0 +1,5 @@
+@extends('errors.minimal')
+
+@section('code', '429')
+@section('title', __('Too many requests'))
+@section('message', __('Please wait a moment before trying again.'))

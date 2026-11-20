@@ -1,0 +1,1 @@
+Implementasikan milestone M0 dan M1 sesuai docs. Mulai dengan audit versi runtime dan opsi starter kit. Jika bare Laravel, pilih auth owner-only yang cocok untuk stack, tanpa registrasi publik. Buat dashboard dan profile minimal, route protection, validasi, policy, feature tests. Perlihatkan perubahan file dan command test. Jangan membuat data pribadi fiktif.

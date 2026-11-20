@@ -1,0 +1,116 @@
+@import 'tailwindcss';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+/*
+ * Design tokens. Use these names (bg-paper, text-ink, border-line, bg-accent, ...)
+ * instead of hard-coded hex values in templates.
+ */
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --font-display: 'Instrument Serif', ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+
+    --color-paper: oklch(0.985 0.003 85);
+    --color-surface: oklch(1 0 0);
+    --color-ink: oklch(0.22 0.012 260);
+    --color-ink-muted: oklch(0.47 0.012 260);
+    --color-line: oklch(0.91 0.006 260);
+    /* Boundaries of form controls need 3:1 against their background (WCAG 1.4.11). */
+    --color-line-strong: oklch(0.62 0.01 260);
+    --color-accent: oklch(0.42 0.11 255);
+    --color-accent-strong: oklch(0.35 0.11 255);
+    --color-accent-ink: oklch(0.99 0 0);
+    --color-danger: oklch(0.5 0.18 27);
+    --color-success: oklch(0.48 0.11 155);
+}
+
+/*
+ * Dark theme: same token names, different values. The theme script in <head>
+ * always sets data-theme (from the saved choice or the OS preference).
+ */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@layer base {
+    :root {
+        color-scheme: light;
+    }
+
+    :root[data-theme=dark] {
+        color-scheme: dark;
+
+        --color-paper: oklch(0.17 0.008 260);
+        --color-surface: oklch(0.215 0.01 260);
+        --color-ink: oklch(0.94 0.004 85);
+        --color-ink-muted: oklch(0.74 0.01 260);
+        --color-line: oklch(0.32 0.01 260);
+        --color-line-strong: oklch(0.56 0.012 260);
+        --color-accent: oklch(0.78 0.1 255);
+        --color-accent-strong: oklch(0.85 0.08 255);
+        --color-accent-ink: oklch(0.18 0.02 260);
+        --color-danger: oklch(0.74 0.15 25);
+        --color-success: oklch(0.77 0.13 155);
+    }
+}
+
+@utility form-label {
+    @apply mb-1.5 block text-sm font-medium text-ink;
+}
+
+@utility form-control {
+    @apply block w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm text-ink shadow-xs placeholder:text-ink-muted/70 focus:border-accent focus:outline-2 focus:outline-offset-0 focus:outline-accent/30 aria-invalid:border-danger;
+}
+
+@utility form-hint {
+    @apply mt-1.5 text-xs text-ink-muted;
+}
+
+@utility form-error {
+    @apply mt-1.5 text-sm text-danger;
+}
+
+@utility btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-primary {
+    @apply btn bg-accent text-accent-ink hover:bg-accent-strong;
+}
+
+@utility btn-secondary {
+    @apply btn border border-line-strong bg-surface text-ink hover:bg-paper;
+}
+
+@utility card {
+    @apply rounded-lg border border-line bg-surface p-5 sm:p-6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
+
+/* Public site */
+@utility container-site {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+}
+
+@utility eyebrow {
+    @apply text-xs font-medium tracking-[0.14em] text-ink-muted uppercase;
+}
+
+@utility chip {
+    @apply inline-flex items-center rounded-full border border-line bg-surface px-3 py-1 text-xs text-ink;
+}
+
+@utility grid-motif {
+    background-image:
+        linear-gradient(to right, color-mix(in oklch, var(--color-line) 70%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in oklch, var(--color-line) 70%, transparent) 1px, transparent 1px);
+    background-size: 48px 48px;
+}

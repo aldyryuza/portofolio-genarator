@@ -1,0 +1,83 @@
+# Production stack for the Portfolio CMS. See docs/DOCKER.md.
+#
+# Variables come from the .env file next to this file (or the file given with
+# `docker compose --env-file`). The same file is passed to the containers.
+
+name: portfolio
+
+x-app: &app
+  build:
+    context: .
+    target: app
+  image: portfolio-app:${IMAGE_TAG:-latest}
+  env_file: ${APP_ENV_FILE:-.env}
+  environment:
+    DB_CONNECTION: mysql
+    DB_HOST: db
+    DB_PORT: 3306
+    LOG_CHANNEL: stderr
+    # nginx is the only client of php-fpm; X-Forwarded-* comes from your reverse proxy through it.
+    TRUSTED_PROXIES: ${TRUSTED_PROXIES:-*}
+  volumes:
+    - storage:/var/www/html/storage
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *app
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      LOG_CHANNEL: stderr
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-*}
+      # Only this service migrates, so the scheduler never races it.
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+
+  scheduler:
+    <<: *app
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      app:
+        condition: service_started
+
+  web:
+    build:
+      context: .
+      target: web
+    image: portfolio-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      # Point your reverse proxy (HTTPS) at this port. Bind to 127.0.0.1 so it is not public.
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:80"
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:?Set DB_DATABASE in .env}
+      MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  storage:
+  mysql:

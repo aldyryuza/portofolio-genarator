@@ -1,0 +1,5 @@
+# UI/UX design brief
+
+Audience: technical recruiters, project stakeholders, potential clients. Tone: mature, premium, credible, not agency template. Start with editorial minimal + subtle engineering motif; light/dark optional. Public site should have a distinctive hero, skill chips, featured project cards with measurable outcomes, elegant timeline for experience, credential gallery, sticky navigation, clear CV download/contact CTA. Admin: simple functional layout, accessible tables/forms/media picker, status badges only when meaningful. Use Tailwind CSS 4 tokens; typography with a coherent 2-font hierarchy, max content width, responsive spacing; no hard-coded repeated hex values. Motion reduced for `prefers-reduced-motion`. Design must be checked at 375px, 768px, 1440px and support keyboard.
+
+Do not imitate screenshots as exact copies; treat images as mood-board references only. Avoid fake client logos and misleading impact metrics. English/Indonesian language can be configured later; store content in one language first.

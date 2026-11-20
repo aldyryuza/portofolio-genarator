@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\HasUniqueSlug;
+use Database\Factories\TagFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
+#[Fillable(['name', 'slug'])]
+class Tag extends Model
+{
+    /** @use HasFactory<TagFactory> */
+    use HasFactory, HasUniqueSlug;
+
+    /**
+     * @return BelongsToMany<Project, $this>
+     */
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class);
+    }
+}
