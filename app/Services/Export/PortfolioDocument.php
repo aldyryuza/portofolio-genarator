@@ -40,6 +40,11 @@ final readonly class PortfolioDocument
         return __('Portfolio — :name', ['name' => $this->ownerName]);
     }
 
+    public function client(Project $project): ?string
+    {
+        return $project->displayClient($this->options->includeConfidential);
+    }
+
     public function cover(Project $project): ?ExportImage
     {
         return $this->covers[$project->id] ?? null;

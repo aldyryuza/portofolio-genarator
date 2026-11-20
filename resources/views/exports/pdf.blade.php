@@ -124,8 +124,8 @@
                 @if ($project->role)
                     <tr><td class="label">{{ __('Role') }}</td><td>{{ $project->role }}</td></tr>
                 @endif
-                @if ($project->client_label)
-                    <tr><td class="label">{{ __('Client') }}</td><td>{{ $project->client_label }}</td></tr>
+                @if ($client = $doc->client($project))
+                    <tr><td class="label">{{ __('Client') }}</td><td>{{ $client }}</td></tr>
                 @endif
                 @if ($period !== '')
                     <tr><td class="label">{{ __('Timeline') }}</td><td>{{ $period }}</td></tr>
@@ -149,6 +149,15 @@
                     </div>
                 @endif
             @endforeach
+
+            @if ($doc->options->includeConfidential && filled($project->confidential_notes))
+                <div class="highlight">
+                    <h3>{{ __('Confidential notes') }}</h3>
+                    @foreach ($paragraphs($project->confidential_notes) as $paragraph)
+                        <p>{!! nl2br(e(trim($paragraph))) !!}</p>
+                    @endforeach
+                </div>
+            @endif
 
             @if ($gallery = $doc->gallery($project))
                 <h3>{{ __('Gallery') }}</h3>

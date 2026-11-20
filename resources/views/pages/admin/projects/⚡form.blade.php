@@ -19,7 +19,7 @@ new class extends Component
 {
     private const NULLABLE_TEXT = [
         'slug', 'excerpt', 'summary', 'challenge', 'solution', 'outcome', 'role',
-        'client_label', 'start_date', 'end_date', 'meta_title', 'meta_description',
+        'client_label', 'start_date', 'end_date', 'meta_title', 'meta_description', 'confidential_notes',
     ];
 
     #[Locked]
@@ -42,6 +42,10 @@ new class extends Component
     public ?string $role = null;
 
     public ?string $client_label = null;
+
+    public bool $hide_client = false;
+
+    public ?string $confidential_notes = null;
 
     public ?string $start_date = null;
 
@@ -76,7 +80,7 @@ new class extends Component
         $this->projectId = $project->id;
         $this->fill($project->only([
             'title', 'slug', 'excerpt', 'summary', 'challenge', 'solution', 'outcome',
-            'role', 'client_label', 'category_id', 'is_featured', 'meta_title', 'meta_description',
+            'role', 'client_label', 'hide_client', 'confidential_notes', 'category_id', 'is_featured', 'meta_title', 'meta_description',
         ]));
         $this->start_date = $project->start_date?->format('Y-m-d');
         $this->end_date = $project->end_date?->format('Y-m-d');
@@ -132,6 +136,8 @@ new class extends Component
             'outcome' => ['nullable', 'string', 'max:10000'],
             'role' => ['nullable', 'string', 'max:120'],
             'client_label' => ['nullable', 'string', 'max:120'],
+            'hide_client' => ['boolean'],
+            'confidential_notes' => ['nullable', 'string', 'max:10000'],
             'start_date' => ['nullable', 'date_format:Y-m-d'],
             'end_date' => array_filter(['nullable', 'date_format:Y-m-d', filled($this->start_date) ? 'after_or_equal:start_date' : null]),
             'category_id' => ['nullable', 'integer', Rule::exists(Category::class, 'id')],
@@ -218,6 +224,12 @@ new class extends Component
                 <x-form.textarea name="outcome" :label="__('Outcome & impact')" rows="4" maxlength="10000" />
             </section>
 
+            <section class="card space-y-4 border-dashed" aria-labelledby="private-heading">
+                <h2 id="private-heading" class="text-base font-semibold">{{ __('Private') }} <x-badge class="ms-1">{{ __('Never public') }}</x-badge></h2>
+                <x-form.textarea name="confidential_notes" :label="__('Confidential notes')" rows="4" maxlength="10000"
+                    :hint="__('Internal details such as infrastructure, architecture or client specifics. Only shown to you, and in exports where you tick “Include confidential details”.')" />
+            </section>
+
             <section class="card space-y-4" aria-labelledby="seo-heading">
                 <h2 id="seo-heading" class="text-base font-semibold">{{ __('Search & sharing') }}</h2>
                 <x-form.input name="meta_title" :label="__('Meta title')" maxlength="70" :hint="__('Up to 70 characters. Defaults to the title.')" />
@@ -247,6 +259,7 @@ new class extends Component
                 </x-form.select>
                 <x-form.input name="role" :label="__('Your role')" maxlength="120" />
                 <x-form.input name="client_label" :label="__('Client label')" maxlength="120" :hint="__('Optional. Use a generic label if the client is confidential.')" />
+                <x-form.checkbox name="hide_client" :label="__('Hide client name publicly (shows “Confidential client”)')" />
                 <div class="grid grid-cols-2 gap-3">
                     <x-form.input name="start_date" type="date" :label="__('Start date')" />
                     <x-form.input name="end_date" type="date" :label="__('End date')" />

@@ -117,7 +117,7 @@ class PptxRenderer
 
         $meta = array_filter([
             __('Role') => $project->role,
-            __('Client') => $project->client_label,
+            __('Client') => $document->client($project),
             __('Technologies') => $project->skills->take(6)->pluck('name')->implode(', '),
         ], 'filled');
 

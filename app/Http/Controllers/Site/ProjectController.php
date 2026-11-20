@@ -103,8 +103,8 @@ class ProjectController extends Controller
 
         return view('site.projects.show', [
             'project' => $project,
-            // Private images stay hidden, even in previews, so previews match the live page.
-            'gallery' => $project->mediaItems->filter(fn ($item) => $item->media->isPublic())->values(),
+            // Private and confidential images stay hidden, even in previews, so previews match the live page.
+            'gallery' => $project->visibleMediaItems(),
             'cover' => $project->cover?->isPublic() ? $project->cover : null,
             'isPreview' => $isPreview,
         ]);

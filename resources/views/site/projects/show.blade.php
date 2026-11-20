@@ -47,8 +47,8 @@
                     @if ($project->role)
                         <div><dt class="eyebrow">{{ __('Role') }}</dt><dd class="mt-1.5">{{ $project->role }}</dd></div>
                     @endif
-                    @if ($project->client_label)
-                        <div><dt class="eyebrow">{{ __('Client') }}</dt><dd class="mt-1.5">{{ $project->client_label }}</dd></div>
+                    @if ($client = $project->displayClient())
+                        <div><dt class="eyebrow">{{ __('Client') }}</dt><dd class="mt-1.5">{{ $client }}</dd></div>
                     @endif
                     @if ($period !== '')
                         <div><dt class="eyebrow">{{ __('Timeline') }}</dt><dd class="mt-1.5">{{ $period }}</dd></div>

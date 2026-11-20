@@ -10,8 +10,9 @@ use App\Support\SiteOwner;
 use Illuminate\Support\Collection;
 
 /**
- * Composes the data for an export. Only public images are used, and only
- * published projects unless the owner explicitly includes drafts.
+ * Composes the data for an export. Only public images are used, only published
+ * projects unless the owner includes drafts, and confidential details (hidden
+ * client names, confidential images and notes) only when explicitly requested.
  */
 class PortfolioExportService
 {
@@ -28,7 +29,7 @@ class PortfolioExportService
         foreach ($projects as $project) {
             $covers[$project->id] = ExportImage::fromMedia($project->cover);
             $galleries[$project->id] = $options->includeGallery
-                ? array_values($project->mediaItems
+                ? array_values($project->visibleMediaItems($options->includeConfidential)
                     ->map(fn ($item) => ExportImage::fromMedia($item->media))
                     ->filter()
                     ->take(self::GALLERY_LIMIT)

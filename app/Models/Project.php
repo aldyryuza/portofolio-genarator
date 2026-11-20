@@ -33,6 +33,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property CarbonInterface|null $start_date
  * @property CarbonInterface|null $end_date
  * @property string|null $client_label
+ * @property bool $hide_client
+ * @property string|null $confidential_notes Owner-only (internal infrastructure, architecture); never public
  * @property int|null $cover_media_id
  * @property ProjectStatus $status
  * @property CarbonInterface|null $published_at
@@ -63,6 +65,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'start_date',
     'end_date',
     'client_label',
+    'hide_client',
+    'confidential_notes',
     'is_featured',
     'meta_title',
     'meta_description',
@@ -78,8 +82,34 @@ class Project extends Model
     protected $attributes = [
         'status' => 'draft',
         'is_featured' => false,
+        'hide_client' => false,
         'sort_order' => 0,
     ];
+
+    /**
+     * Client name as it may be shown outside the admin: a neutral label when hidden.
+     */
+    public function displayClient(bool $includeConfidential = false): ?string
+    {
+        if (blank($this->client_label)) {
+            return null;
+        }
+
+        return $this->hide_client && ! $includeConfidential ? __('Confidential client') : $this->client_label;
+    }
+
+    /**
+     * Gallery entries that may be shown: public images, minus confidential ones unless allowed.
+     * Requires the mediaItems.media relation to be loaded.
+     *
+     * @return Collection<int, ProjectMedia>
+     */
+    public function visibleMediaItems(bool $includeConfidential = false): Collection
+    {
+        return $this->mediaItems
+            ->filter(fn (ProjectMedia $item): bool => $item->media->isPublic() && ($includeConfidential || ! $item->is_confidential))
+            ->values();
+    }
 
     public function isPublished(): bool
     {
@@ -193,6 +223,7 @@ class Project extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'is_featured' => 'boolean',
+            'hide_client' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

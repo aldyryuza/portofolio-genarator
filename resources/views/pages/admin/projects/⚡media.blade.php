@@ -145,8 +145,29 @@ new #[Title('Project media')] class extends Component
         $project = $this->authorizeProject();
         $media = MediaAsset::images()->findOrFail($mediaId);
 
+        // The cover is always public, so a confidential image can never be it.
+        if (ProjectMedia::where('project_id', $project->id)->where('media_id', $media->id)->where('is_confidential', true)->exists()) {
+            $this->addError('media', __('A confidential image cannot be the cover.'));
+
+            return;
+        }
+
         $project->forceFill(['cover_media_id' => $media->id])->save();
         $this->logChange('cover.set', ['media' => $media->uuid]);
+    }
+
+    public function toggleConfidential(int $itemId): void
+    {
+        $project = $this->authorizeProject();
+        $item = $this->item($itemId);
+
+        $item->update(['is_confidential' => ! $item->is_confidential]);
+
+        if ($item->is_confidential && $project->cover_media_id === $item->media_id) {
+            $project->forceFill(['cover_media_id' => null])->save();
+        }
+
+        $this->logChange($item->is_confidential ? 'gallery.marked_confidential' : 'gallery.marked_shareable', ['media_id' => $item->media_id]);
     }
 
     public function clearCover(): void
@@ -267,7 +288,7 @@ new #[Title('Project media')] class extends Component
     <div>
         <a href="{{ route('admin.projects.edit', $this->project) }}" wire:navigate class="text-sm text-ink-muted hover:text-ink">← {{ __('Back to project') }}</a>
         <h1 class="mt-1 text-2xl font-semibold tracking-tight">{{ __('Media for “:title”', ['title' => $this->project->title]) }}</h1>
-        <p class="mt-1 text-sm text-ink-muted">{{ __('Only public images and videos appear on the public project page.') }}</p>
+        <p class="mt-1 text-sm text-ink-muted">{{ __('Only public, non-confidential images and videos appear on the public project page. Mark internal diagrams or infrastructure screenshots as confidential.') }}</p>
     </div>
 
     <x-flash />
@@ -305,6 +326,9 @@ new #[Title('Project media')] class extends Component
                             <p class="flex flex-wrap items-center gap-2 text-sm">
                                 <span class="truncate font-medium">{{ $item->media->original_filename }}</span>
                                 <x-badge :tone="$item->media->isPublic() ? 'success' : 'neutral'">{{ $item->media->visibility->label() }}</x-badge>
+                                @if ($item->is_confidential)
+                                    <x-badge>{{ __('Confidential') }}</x-badge>
+                                @endif
                                 @if ($this->project->cover_media_id === $item->media_id)
                                     <x-badge tone="accent">{{ __('Cover') }}</x-badge>
                                 @endif
@@ -320,7 +344,10 @@ new #[Title('Project media')] class extends Component
                             <p class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                                 <button type="button" wire:click="moveItem({{ $item->id }}, 'up')" class="text-ink-muted hover:text-ink" aria-label="{{ __('Move image up') }}">↑ {{ __('Up') }}</button>
                                 <button type="button" wire:click="moveItem({{ $item->id }}, 'down')" class="text-ink-muted hover:text-ink" aria-label="{{ __('Move image down') }}">↓ {{ __('Down') }}</button>
-                                @if ($this->project->cover_media_id !== $item->media_id)
+                                <button type="button" wire:click="toggleConfidential({{ $item->id }})" aria-pressed="{{ $item->is_confidential ? 'true' : 'false' }}" class="text-accent hover:underline">
+                                    {{ $item->is_confidential ? __('Allow publicly') : __('Mark confidential') }}
+                                </button>
+                                @if ($this->project->cover_media_id !== $item->media_id && ! $item->is_confidential)
                                     <button type="button" wire:click="setCover({{ $item->media_id }})" class="text-accent hover:underline">{{ __('Set as cover') }}</button>
                                 @endif
                                 @unless ($item->media->isPublic())
