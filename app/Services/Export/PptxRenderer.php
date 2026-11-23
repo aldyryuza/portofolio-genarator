@@ -2,8 +2,10 @@
 
 namespace App\Services\Export;
 
+use App\Enums\ExportDocument;
 use App\Models\Project;
 use Illuminate\Support\Str;
+use LogicException;
 use PhpOffice\PhpPresentation\DocumentLayout;
 use PhpOffice\PhpPresentation\IOFactory;
 use PhpOffice\PhpPresentation\PhpPresentation;
@@ -44,6 +46,18 @@ class PptxRenderer
             ->setTitle($document->title())
             ->setCreator($document->ownerName);
 
+        match ($document->options->document) {
+            ExportDocument::Portfolio => $this->portfolioDeck($presentation, $document),
+            ExportDocument::CaseStudy => $this->caseStudyDeck($presentation, $document),
+            // ExportOptions rejects this combination; guard against direct calls.
+            ExportDocument::Cv => throw new LogicException('A CV can only be exported as PDF.'),
+        };
+
+        return $this->write($presentation);
+    }
+
+    private function portfolioDeck(PhpPresentation $presentation, PortfolioDocument $document): void
+    {
         $this->titleSlide($presentation->getActiveSlide(), $document);
 
         foreach ($document->projects as $project) {
@@ -69,8 +83,54 @@ class PptxRenderer
         }
 
         $this->closingSlide($presentation->createSlide(), $document);
+    }
 
-        return $this->write($presentation);
+    /**
+     * Per project: opening slide, one slide per story section, then the gallery.
+     */
+    private function caseStudyDeck(PhpPresentation $presentation, PortfolioDocument $document): void
+    {
+        $first = true;
+
+        foreach ($document->projects as $project) {
+            $slide = $first ? $presentation->getActiveSlide() : $presentation->createSlide();
+            $first = false;
+
+            $this->projectSlide($slide, $document, $project);
+
+            $sections = array_filter([
+                __('Overview') => $project->summary,
+                __('The challenge') => $project->challenge,
+                __('Approach & responsibilities') => $project->solution,
+                __('Outcome') => $project->outcome,
+                __('Confidential notes') => $document->options->includeConfidential ? $project->confidential_notes : null,
+            ], 'filled');
+
+            foreach ($sections as $heading => $text) {
+                $this->sectionSlide($presentation->createSlide(), $project, $heading, (string) $text);
+            }
+
+            if ($document->gallery($project) !== []) {
+                $this->gallerySlide($presentation->createSlide(), $document, $project);
+            }
+        }
+
+        if ($document->projects->isEmpty()) {
+            $slide = $this->blankSlide($presentation->getActiveSlide());
+            $this->text($slide, __('Case study'), self::MARGIN, 60, 860, 60, 30, heading: true);
+            $this->text($slide, __('No projects match the selected export options.'), self::MARGIN, 140, 860, 40, 16, color: 'muted');
+        }
+
+        $this->closingSlide($presentation->createSlide(), $document);
+    }
+
+    private function sectionSlide(Slide $slide, Project $project, string $heading, string $text): void
+    {
+        $this->blankSlide($slide);
+        $this->text($slide, Str::upper(Str::limit($project->title, 70)), self::MARGIN, self::MARGIN, 860, 22, 10, color: 'accent');
+        $this->text($slide, $heading, self::MARGIN, self::MARGIN + 28, 860, 50, 28, heading: true);
+        // Long sections are trimmed to stay readable; the PDF case study carries the full text.
+        $this->text($slide, Str::limit(preg_replace('/\s+/', ' ', $text) ?? $text, 700), self::MARGIN, 150, 860, 340, 16);
     }
 
     private function titleSlide(Slide $slide, PortfolioDocument $document): void

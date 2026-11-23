@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ExportDocument;
 use App\Models\ExportJob;
 use App\Support\SiteOwner;
 use Illuminate\Support\Facades\Gate;
@@ -22,7 +23,8 @@ class ExportDownloadController extends Controller
         $disk = Storage::disk((string) $exportJob->output_disk);
         abort_unless($disk->exists((string) $exportJob->output_path), 404);
 
-        $filename = Str::slug($owner->name().' portfolio '.$exportJob->created_at?->format('Y-m-d')).'.'.$exportJob->format->value;
+        $document = ExportDocument::tryFrom((string) ($exportJob->configuration_json['document'] ?? '')) ?? ExportDocument::Portfolio;
+        $filename = Str::slug($owner->name().' '.$document->value.' '.$exportJob->created_at?->format('Y-m-d')).'.'.$exportJob->format->value;
 
         return $disk->download((string) $exportJob->output_path, $filename, [
             'Content-Type' => $exportJob->format->mimeType(),

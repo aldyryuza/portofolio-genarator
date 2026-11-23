@@ -2,13 +2,20 @@
 
 namespace App\Services\Export;
 
+use App\Enums\ExportDocument;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class PdfRenderer
 {
     public function html(PortfolioDocument $document): string
     {
-        return view('exports.pdf', [
+        $view = match ($document->options->document) {
+            ExportDocument::Portfolio => 'exports.portfolio',
+            ExportDocument::Cv => 'exports.cv',
+            ExportDocument::CaseStudy => 'exports.case-study',
+        };
+
+        return view($view, [
             'doc' => $document,
             'theme' => self::theme($document->options->template),
         ])->render();

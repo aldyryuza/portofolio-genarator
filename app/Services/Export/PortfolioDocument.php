@@ -2,11 +2,13 @@
 
 namespace App\Services\Export;
 
+use App\Enums\ExportDocument;
 use App\Models\Certification;
 use App\Models\Education;
 use App\Models\Experience;
 use App\Models\Profile;
 use App\Models\Project;
+use App\Models\SkillGroup;
 use Illuminate\Support\Collection;
 
 /**
@@ -21,6 +23,7 @@ final readonly class PortfolioDocument
      * @param  Collection<int, Experience>  $experiences
      * @param  Collection<int, Education>  $educations
      * @param  Collection<int, Certification>  $certifications
+     * @param  Collection<int, SkillGroup>  $skillGroups  CV only
      */
     public function __construct(
         public ExportOptions $options,
@@ -33,11 +36,18 @@ final readonly class PortfolioDocument
         public Collection $experiences,
         public Collection $educations,
         public Collection $certifications,
+        public Collection $skillGroups = new Collection,
     ) {}
 
     public function title(): string
     {
-        return __('Portfolio — :name', ['name' => $this->ownerName]);
+        return match ($this->options->document) {
+            ExportDocument::Portfolio => __('Portfolio — :name', ['name' => $this->ownerName]),
+            ExportDocument::Cv => __('Curriculum vitae — :name', ['name' => $this->ownerName]),
+            ExportDocument::CaseStudy => $this->projects->count() === 1
+                ? __('Case study — :project', ['project' => $this->projects->first()?->title])
+                : __('Case studies — :name', ['name' => $this->ownerName]),
+        };
     }
 
     public function client(Project $project): ?string

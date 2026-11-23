@@ -2,11 +2,13 @@
 
 namespace App\Services\Export;
 
+use App\Enums\ExportDocument;
 use App\Enums\ExportFormat;
 use App\Models\Category;
 use App\Models\Project;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator as ValidatorInstance;
 
 /**
  * Validated, immutable description of what an export should contain.
@@ -21,11 +23,15 @@ final readonly class ExportOptions
 
     public const MAX_PROJECTS = 30;
 
+    /** A CV lists only a few projects so it stays within two pages. */
+    public const CV_MAX_PROJECTS = 4;
+
     /**
      * @param  list<int>  $projectIds
      */
     public function __construct(
         public ExportFormat $format,
+        public ExportDocument $document = ExportDocument::Portfolio,
         public string $scope = 'all',
         public array $projectIds = [],
         public ?int $categoryId = null,
@@ -49,6 +55,7 @@ final readonly class ExportOptions
     {
         return [
             'format' => ['required', Rule::enum(ExportFormat::class)],
+            'document' => ['sometimes', Rule::enum(ExportDocument::class)],
             'scope' => ['required', Rule::in(self::SCOPES)],
             'project_ids' => ['array', 'max:'.self::MAX_PROJECTS, 'required_if:scope,selected'],
             'project_ids.*' => ['integer', 'distinct', Rule::exists(Project::class, 'id')->whereNull('deleted_at')],
@@ -72,10 +79,24 @@ final readonly class ExportOptions
      */
     public static function fromArray(array $input): self
     {
-        $data = Validator::make($input, self::rules())->validate();
+        $data = Validator::make($input, self::rules())
+            ->after(function (ValidatorInstance $validator) use ($input): void {
+                $document = ExportDocument::tryFrom((string) ($input['document'] ?? 'portfolio'));
+                $format = ExportFormat::tryFrom((string) ($input['format'] ?? ''));
+
+                if ($document && $format && ! $document->supports($format)) {
+                    $validator->errors()->add('format', __('A :document can only be exported as PDF.', ['document' => $document->label()]));
+                }
+
+                if ($document === ExportDocument::CaseStudy && ($input['scope'] ?? null) !== 'selected') {
+                    $validator->errors()->add('scope', __('Choose the projects for a case study.'));
+                }
+            })
+            ->validate();
 
         return new self(
             format: ExportFormat::from($data['format']),
+            document: ExportDocument::from($data['document'] ?? 'portfolio'),
             scope: $data['scope'],
             projectIds: array_values(array_map('intval', $data['project_ids'] ?? [])),
             categoryId: isset($data['category_id']) ? (int) $data['category_id'] : null,
@@ -98,6 +119,7 @@ final readonly class ExportOptions
     {
         return [
             'format' => $this->format->value,
+            'document' => $this->document->value,
             'scope' => $this->scope,
             'project_ids' => $this->projectIds,
             'category_id' => $this->categoryId,

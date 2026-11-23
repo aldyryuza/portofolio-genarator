@@ -31,5 +31,16 @@
     "Part-time": "Paruh waktu",
     "Contract": "Kontrak",
     "Freelance": "Lepas",
-    "Internship": "Magang"
+    "Internship": "Magang",
+    "Curriculum vitae": "Curriculum vitae",
+    "Curriculum vitae — :name": "Curriculum vitae — :name",
+    "Profile": "Profil",
+    "Skills": "Keahlian",
+    "Selected projects": "Proyek pilihan",
+    "Case study": "Studi kasus",
+    "Case study — :project": "Studi kasus — :project",
+    "Case studies — :name": "Studi kasus — :name",
+    "Video": "Video",
+    "Confidential notes": "Catatan rahasia",
+    "Confidential client": "Klien rahasia"
 }

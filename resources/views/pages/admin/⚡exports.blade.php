@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Exports\GeneratePortfolioExport;
+use App\Enums\ExportDocument;
 use App\Enums\ExportFormat;
 use App\Enums\ExportState;
 use App\Models\ActivityLog;
@@ -21,6 +22,8 @@ use Livewire\Component;
 new #[Title('Exports')] class extends Component
 {
     private const MAX_EXPORTS_PER_MINUTE = 6;
+
+    public string $document = 'portfolio';
 
     public string $format = 'pdf';
 
@@ -94,6 +97,27 @@ new #[Title('Exports')] class extends Component
         return ExportJob::query()->latest('id')->limit(15)->get();
     }
 
+    /**
+     * Keep the form consistent with what each document type supports.
+     */
+    public function updatedDocument(): void
+    {
+        $document = ExportDocument::tryFrom($this->document) ?? ExportDocument::Portfolio;
+
+        if (! $document->supports(ExportFormat::tryFrom($this->format) ?? ExportFormat::Pdf)) {
+            $this->format = ExportFormat::Pdf->value;
+        }
+
+        if ($document === ExportDocument::CaseStudy) {
+            $this->scope = 'selected';
+        } elseif ($this->scope === 'selected' && $this->project_ids === []) {
+            // Leaving a case study without picking projects: fall back to all projects.
+            $this->scope = 'all';
+        }
+
+        $this->resetValidation();
+    }
+
     public function generate(GeneratePortfolioExport $generate): void
     {
         $this->authorize('create', ExportJob::class);
@@ -147,6 +171,7 @@ new #[Title('Exports')] class extends Component
 
         $config = $preset->configuration_json;
         $this->presetId = $preset->id;
+        $this->document = (string) ($config['document'] ?? 'portfolio');
         $this->format = (string) ($config['format'] ?? 'pdf');
         $this->scope = (string) ($config['scope'] ?? 'all');
         $this->project_ids = array_values(array_map('intval', (array) ($config['project_ids'] ?? [])));
@@ -195,6 +220,7 @@ new #[Title('Exports')] class extends Component
     private function optionsInput(): array
     {
         return [
+            'document' => $this->document,
             'format' => $this->format,
             'scope' => $this->scope,
             'project_ids' => $this->scope === 'selected' ? $this->project_ids : [],
@@ -226,10 +252,23 @@ new #[Title('Exports')] class extends Component
             @error('format') <p class="form-error" role="alert">{{ $message }}</p> @enderror
 
             <fieldset class="space-y-3">
-                <legend class="text-base font-semibold">{{ __('Format & look') }}</legend>
+                <legend class="text-base font-semibold">{{ __('Document & look') }}</legend>
+                @php($documentType = \App\Enums\ExportDocument::tryFrom($document) ?? \App\Enums\ExportDocument::Portfolio)
+                <div class="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="{{ __('Document type') }}">
+                    @foreach (\App\Enums\ExportDocument::cases() as $type)
+                        <label wire:key="document-{{ $type->value }}" @class(['flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm', 'border-accent ring-2 ring-accent/30' => $document === $type->value, 'border-line-strong' => $document !== $type->value])>
+                            <span class="flex items-center gap-2 font-medium">
+                                <input type="radio" wire:model.live="document" value="{{ $type->value }}" class="accent-accent">
+                                {{ $type->label() }}
+                            </span>
+                            <span class="text-xs text-ink-muted">{{ $type->description() }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                @error('document') <p class="form-error">{{ $message }}</p> @enderror
                 <div class="grid gap-4 sm:grid-cols-3">
                     <x-form.select name="format" :label="__('Format')" live>
-                        @foreach (\App\Enums\ExportFormat::cases() as $option)
+                        @foreach ($documentType->formats() as $option)
                             <option value="{{ $option->value }}" wire:key="format-{{ $option->value }}">{{ $option->label() }}</option>
                         @endforeach
                     </x-form.select>
@@ -248,9 +287,13 @@ new #[Title('Exports')] class extends Component
                 <legend class="text-base font-semibold">{{ __('Projects') }}</legend>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <x-form.select name="scope" :label="__('Which projects')" live>
-                        <option value="all">{{ __('All (in site order)') }}</option>
+                        @unless ($documentType === \App\Enums\ExportDocument::CaseStudy)
+                            <option value="all">{{ __('All (in site order)') }}</option>
+                        @endunless
                         <option value="selected">{{ __('Selected projects') }}</option>
-                        <option value="category">{{ __('One category') }}</option>
+                        @unless ($documentType === \App\Enums\ExportDocument::CaseStudy)
+                            <option value="category">{{ __('One category') }}</option>
+                        @endunless
                     </x-form.select>
                     <x-form.input name="max_projects" type="number" :label="$format === 'pptx' ? __('Max projects (≈ slides)') : __('Max projects')" min="1" :max="\App\Services\Export\ExportOptions::MAX_PROJECTS" />
                 </div>
@@ -288,6 +331,9 @@ new #[Title('Exports')] class extends Component
 
             <fieldset class="space-y-2">
                 <legend class="text-base font-semibold">{{ __('Sections') }}</legend>
+                @if ($documentType === \App\Enums\ExportDocument::Cv)
+                    <p class="form-hint">{{ __('A CV always includes your profile, experience, education and skills, plus up to :count selected projects.', ['count' => \App\Services\Export\ExportOptions::CV_MAX_PROJECTS]) }}</p>
+                @endif
                 <x-form.checkbox name="include_profile" :label="__('Profile & introduction')" />
                 <x-form.checkbox name="include_gallery" :label="__('Project galleries')" />
                 <x-form.checkbox name="include_experience" :label="__('Experience')" />
