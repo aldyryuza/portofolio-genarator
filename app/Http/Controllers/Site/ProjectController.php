@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\TrackPageView;
 use App\Models\Category;
 use App\Models\Project;
 use App\Models\ProjectSlugRedirect;
@@ -59,7 +60,7 @@ class ProjectController extends Controller
         ]);
     }
 
-    public function show(string $slug): View|RedirectResponse
+    public function show(Request $request, string $slug): View|RedirectResponse
     {
         $project = Project::where('slug', $slug)->first();
 
@@ -69,6 +70,11 @@ class ProjectController extends Controller
 
         // Drafts are visible to the owner only; everyone else gets a plain 404.
         abort_unless(Gate::allows('view', $project), 404);
+
+        if ($project->isPublished()) {
+            // Lets the page-view tracker attribute this visit to the project.
+            $request->attributes->set(TrackPageView::PROJECT_ATTRIBUTE, $project->id);
+        }
 
         return $this->render($project, isPreview: ! $project->isPublished());
     }

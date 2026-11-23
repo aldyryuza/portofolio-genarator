@@ -70,7 +70,7 @@ test('dry run removes nothing', function () {
     $this->travel(31)->days();
 
     $this->artisan('portfolio:prune', ['--dry-run' => true])
-        ->expectsOutputToContain('Would remove 1 media asset(s)')
+        ->expectsOutputToContain('Would remove 1 media asset(s), 0 export(s) and 0 analytics event(s)')
         ->assertSuccessful();
 
     expect(MediaAsset::withTrashed()->find($media->id))->not->toBeNull();

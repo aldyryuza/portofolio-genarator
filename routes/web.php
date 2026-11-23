@@ -10,6 +10,7 @@ use App\Http\Controllers\Site\PageController;
 use App\Http\Controllers\Site\ProjectController;
 use App\Http\Controllers\Site\ResumeController;
 use App\Http\Controllers\Site\SeoController;
+use App\Http\Middleware\TrackPageView;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -17,22 +18,25 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
-// Public site: read-only, published content only.
-Route::get('/', HomeController::class)->name('home');
-Route::get('/about', [PageController::class, 'about'])->name('about');
-Route::get('/experience', [PageController::class, 'experience'])->name('experience');
-Route::get('/education', [PageController::class, 'education'])->name('education');
-Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
-Route::get('/projects/{slug}', [ProjectController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('projects.show');
+// Public site: read-only, published content only. Page views here feed the
+// cookie-less analytics (previews, admin, media and crawler endpoints are not counted).
+Route::middleware(TrackPageView::class)->group(function () {
+    Route::get('/', HomeController::class)->name('home');
+    Route::get('/about', [PageController::class, 'about'])->name('about');
+    Route::get('/experience', [PageController::class, 'experience'])->name('experience');
+    Route::get('/education', [PageController::class, 'education'])->name('education');
+    Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+    Route::get('/projects/{slug}', [ProjectController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('projects.show');
+    Route::get('/cv', [ResumeController::class, 'index'])->name('cv');
+    Route::get('/contact', [ContactController::class, 'show'])->name('contact');
+});
 Route::get('/preview/projects/{project}', [ProjectController::class, 'preview'])
     ->middleware(['signed', 'throttle:60,1'])
     ->name('projects.preview');
-Route::get('/cv', [ResumeController::class, 'index'])->name('cv');
 Route::get('/cv/{resume}/download', [ResumeController::class, 'download'])
     ->whereUuid('resume')
     ->middleware('throttle:30,1')
     ->name('cv.download');
-Route::get('/contact', [ContactController::class, 'show'])->name('contact');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:contact')->name('contact.store');
 // Crawler endpoints need no session, cookies or CSRF; skipping them avoids a session row per bot hit.
 Route::withoutMiddleware([
@@ -85,6 +89,7 @@ Route::middleware(['auth', 'can:access-admin'])
 
         Route::livewire('/exports', 'pages::admin.exports')->name('exports');
         Route::livewire('/qr-codes', 'pages::admin.qr-codes')->name('qr-codes');
+        Route::livewire('/analytics', 'pages::admin.analytics')->name('analytics');
         Route::get('/qr-codes/download', QrCodeDownloadController::class)->name('qr-codes.download');
         Route::get('/exports/{exportJob}/download', ExportDownloadController::class)->whereUuid('exportJob')->name('exports.download');
 

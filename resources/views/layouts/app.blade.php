@@ -2,6 +2,7 @@
     $navigation = [
         '' => [
             ['route' => 'admin.dashboard', 'label' => __('Dashboard'), 'active' => 'admin.dashboard'],
+            ['route' => 'admin.analytics', 'label' => __('Analytics'), 'active' => 'admin.analytics'],
             ['route' => 'admin.inbox', 'label' => __('Inbox'), 'active' => 'admin.inbox', 'count' => \App\Models\ContactMessage::where('status', 'new')->count()],
         ],
         __('Content') => [

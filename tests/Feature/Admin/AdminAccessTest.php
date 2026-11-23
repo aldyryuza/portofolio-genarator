@@ -21,6 +21,7 @@ dataset('admin routes', [
     'admin.inbox',
     'admin.exports',
     'admin.qr-codes',
+    'admin.analytics',
 ]);
 
 test('guests are redirected to login from admin pages', function (string $route) {

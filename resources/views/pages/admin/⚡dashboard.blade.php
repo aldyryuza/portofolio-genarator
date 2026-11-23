@@ -7,6 +7,7 @@ use App\Models\ContactMessage;
 use App\Models\Profile;
 use App\Models\Project;
 use App\Models\Skill;
+use App\Services\Analytics\AnalyticsReport;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -45,6 +46,7 @@ new #[Title('Dashboard')] class extends Component
             'featured' => Project::query()->published()->where('is_featured', true)->count(),
             'skills' => Skill::query()->count(),
             'unread' => ContactMessage::query()->where('status', ContactMessageStatus::New)->count(),
+            'visitors' => (new AnalyticsReport(30))->totals()['visitors'],
         ];
     }
 
@@ -88,12 +90,13 @@ new #[Title('Dashboard')] class extends Component
                 <h2 id="content-heading" class="text-sm font-medium text-ink-muted">{{ __('Content') }}</h2>
                 <a href="{{ route('admin.projects.create') }}" wire:navigate class="text-sm text-accent hover:underline">{{ __('New project') }}</a>
             </div>
-            <dl class="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <dl class="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-5">
                 @foreach ([
                     'published' => __('Published projects'),
                     'drafts' => __('Drafts'),
                     'featured' => __('Featured (live)'),
                     'skills' => __('Skills'),
+                    'visitors' => __('Visitors (30 days)'),
                 ] as $key => $label)
                     <div wire:key="count-{{ $key }}">
                         <dt class="text-xs text-ink-muted">{{ $label }}</dt>

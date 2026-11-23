@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Site;
 
+use App\Enums\AnalyticsEventType;
 use App\Http\Controllers\Controller;
 use App\Models\Resume;
+use App\Services\Analytics\AnalyticsRecorder;
 use App\Support\SiteOwner;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -28,7 +31,7 @@ class ResumeController extends Controller
     /**
      * Private or unpublished CVs answer 404 so their existence is not revealed.
      */
-    public function download(Resume $resume, SiteOwner $owner): StreamedResponse
+    public function download(Request $request, Resume $resume, SiteOwner $owner, AnalyticsRecorder $analytics): StreamedResponse
     {
         abort_unless(Gate::allows('download', $resume), 404);
 
@@ -39,6 +42,8 @@ class ResumeController extends Controller
         $disk = Storage::disk($file->disk);
 
         abort_unless($disk->exists($file->originalPath()), 404);
+
+        $analytics->record(AnalyticsEventType::CvDownload, $request, ['resume_id' => $resume->id]);
 
         return $disk->download($file->originalPath(), $resume->downloadFilename($owner->name()), [
             'Content-Type' => 'application/pdf',

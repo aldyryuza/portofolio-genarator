@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AnalyticsEvent;
 use App\Models\ExportJob;
 use App\Models\MediaAsset;
 use Illuminate\Console\Command;
@@ -12,6 +13,7 @@ class PruneStorage extends Command
     protected $signature = 'portfolio:prune
                             {--media-days=30 : Remove files of media deleted more than this many days ago}
                             {--export-days=30 : Remove export files older than this many days}
+                            {--analytics-days=395 : Remove analytics events older than this many days}
                             {--dry-run : Only report what would be removed}';
 
     protected $description = 'Permanently remove files of deleted media and old exports';
@@ -24,8 +26,9 @@ class PruneStorage extends Command
 
         $media = $this->pruneMedia($mediaDays, $dryRun);
         $exports = $this->pruneExports($exportDays, $dryRun);
+        $analytics = $this->pruneAnalytics(max(1, (int) $this->option('analytics-days')), $dryRun);
 
-        $this->info(sprintf('%s %d media asset(s) and %d export(s).', $dryRun ? 'Would remove' : 'Removed', $media, $exports));
+        $this->info(sprintf('%s %d media asset(s), %d export(s) and %d analytics event(s).', $dryRun ? 'Would remove' : 'Removed', $media, $exports, $analytics));
 
         return self::SUCCESS;
     }
@@ -53,6 +56,16 @@ class PruneStorage extends Command
             });
 
         return $count;
+    }
+
+    /**
+     * Anonymous analytics are kept for about 13 months for year-over-year comparison.
+     */
+    private function pruneAnalytics(int $days, bool $dryRun): int
+    {
+        $query = AnalyticsEvent::query()->where('created_at', '<', now()->subDays($days));
+
+        return $dryRun ? $query->count() : $query->delete();
     }
 
     private function pruneExports(int $days, bool $dryRun): int
