@@ -2,8 +2,23 @@
 #
 # Variables come from the .env file next to this file (or the file given with
 # `docker compose --env-file`). The same file is passed to the containers.
+#
+# Database: the bundled MySQL is reachable only inside this stack's network (no
+# host port), so it never clashes with another MySQL on the server. The app uses
+# the root account; defaults are database "portofolio", password "root".
+# Override with DOCKER_DB_DATABASE / DOCKER_DB_PASSWORD (the DB_* values in .env
+# are for local development and are ignored here). These values are applied only
+# when the mysql volume is first created.
 
 name: portfolio
+
+x-db-credentials: &db-credentials
+  DB_CONNECTION: mysql
+  DB_HOST: db
+  DB_PORT: 3306
+  DB_DATABASE: ${DOCKER_DB_DATABASE:-portofolio}
+  DB_USERNAME: root
+  DB_PASSWORD: ${DOCKER_DB_PASSWORD:-root}
 
 x-app: &app
   build:
@@ -12,9 +27,7 @@ x-app: &app
   image: portfolio-app:${IMAGE_TAG:-latest}
   env_file: ${APP_ENV_FILE:-.env}
   environment:
-    DB_CONNECTION: mysql
-    DB_HOST: db
-    DB_PORT: 3306
+    <<: *db-credentials
     LOG_CHANNEL: stderr
     # nginx is the only client of php-fpm; X-Forwarded-* comes from your reverse proxy through it.
     TRUSTED_PROXIES: ${TRUSTED_PROXIES:-*}
@@ -29,9 +42,7 @@ services:
   app:
     <<: *app
     environment:
-      DB_CONNECTION: mysql
-      DB_HOST: db
-      DB_PORT: 3306
+      <<: *db-credentials
       LOG_CHANNEL: stderr
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-*}
       # Only this service migrates, so the scheduler never races it.
@@ -51,8 +62,9 @@ services:
     image: portfolio-web:${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
-      # Point your reverse proxy (HTTPS) at this port. Bind to 127.0.0.1 so it is not public.
-      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:80"
+      # Point your reverse proxy (HTTPS) at this port. Bound to 127.0.0.1 so it is not public.
+      # Change WEB_PORT in .env if 8090 is taken on your server.
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8090}:80"
     depends_on:
       - app
     healthcheck:
@@ -65,13 +77,13 @@ services:
     image: mysql:8.0
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE:?Set DB_DATABASE in .env}
-      MYSQL_USER: ${DB_USERNAME:?Set DB_USERNAME in .env}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${DOCKER_DB_DATABASE:-portofolio}
+      MYSQL_ROOT_PASSWORD: ${DOCKER_DB_PASSWORD:-root}
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     volumes:
       - mysql:/var/lib/mysql
+    # No host port on purpose. To reach the database from a tool on the server, add:
+    #   ports: ["127.0.0.1:${DB_FORWARD_PORT:-33061}:3306"]
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 5s

@@ -35,6 +35,9 @@ jobs:
 
     # Process env wins over .env and phpunit.xml defaults, so only the mysql leg switches databases.
     env:
+      # .env.example targets production; CI runs the app in the testing environment.
+      APP_ENV: testing
+      APP_DEBUG: true
       DB_CONNECTION: ${{ matrix.database }}
       DB_HOST: 127.0.0.1
       DB_PORT: 3306

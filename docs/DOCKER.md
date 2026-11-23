@@ -4,37 +4,32 @@ The repository ships a production setup: `Dockerfile` (multi-stage) and `compose
 
 | Service | Image | Role |
 |---|---|---|
-| `web` | nginx (target `web`) | Serves `public/` and passes PHP requests to `app`. Listens on `127.0.0.1:8080` by default. |
+| `web` | nginx (target `web`) | Serves `public/` and passes PHP requests to `app`. Listens on `127.0.0.1:8090` by default (`WEB_PORT`). |
 | `app` | PHP 8.4-FPM (target `app`) | The application. Runs migrations on start (`RUN_MIGRATIONS=true`). |
 | `scheduler` | same as `app` | `php artisan schedule:work` (daily `portfolio:prune`). |
-| `db` | `mysql:8.0` | Database, data in the `mysql` volume. |
+| `db` | `mysql:8.0` | Database `portofolio`, user `root`, data in the `mysql` volume. **No host port**, so it never clashes with another MySQL on the server. |
 
-Uploads, CVs and exports live in the `storage` volume. HTTPS is expected to be terminated by a reverse proxy on the host (nginx, Caddy, Traefik, Cloudflare Tunnel, …) that forwards to `127.0.0.1:8080`.
+Uploads, CVs and exports live in the `storage` volume. HTTPS is expected to be terminated by a reverse proxy on the host (nginx, Caddy, Traefik, Cloudflare Tunnel, …) that forwards to `127.0.0.1:8090`.
 
 ## 1. Prepare `.env` on the server
 
-Start from `.env.example` and set at least:
-
-```dotenv
-APP_NAME="Your Name"
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://your-domain.com
-APP_KEY=                      # see step 2
-LOG_LEVEL=warning
-
-DB_DATABASE=portfolio
-DB_USERNAME=portfolio
-DB_PASSWORD=<long random password>
-DB_ROOT_PASSWORD=<another long random password>
-
-SESSION_SECURE_COOKIE=true
-MAIL_MAILER=smtp              # plus MAIL_HOST, MAIL_PORT, MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM_ADDRESS
+```bash
+cp .env.example .env
 ```
 
-`DB_HOST`, `DB_CONNECTION`, `LOG_CHANNEL` and `TRUSTED_PROXIES` are set by `compose.yaml`. Optional: `WEB_PORT` (default 8080), `WEB_BIND` (default 127.0.0.1), `IMAGE_TAG`.
+`.env.example` is already set up for a Docker server. Fill in the two values marked **REQUIRED**:
 
-Keep `.env` readable only by you (`chmod 600 .env`). It is never copied into the image (`.dockerignore`).
+- `APP_URL` — your public address, e.g. `https://portfolio.example.com`.
+- `APP_KEY` — see step 2.
+
+Optional:
+
+- `WEB_PORT` — host port for nginx (default `8090`). Check it is free: `ss -ltnp | grep :8090`.
+- `DOCKER_DB_DATABASE` / `DOCKER_DB_PASSWORD` — database name and root password (defaults `portofolio` / `root`). The database is only reachable inside the Docker network; still, use a stronger password if you ever publish its port. These are applied **only when the `mysql` volume is first created**.
+- `MAIL_*` — real SMTP settings so contact-form notifications are delivered.
+- `SESSION_SECURE_COOKIE=true` — once the site is served over HTTPS.
+
+The `DB_*` values in `.env` are ignored by Docker (`compose.yaml` sets them). Keep `.env` readable only by you (`chmod 600 .env`). It is never copied into the image (`.dockerignore`).
 
 ## 2. Build, generate the key, start
 
@@ -44,7 +39,14 @@ docker compose run --rm --no-deps --entrypoint php app artisan key:generate --sh
 # paste the printed value into APP_KEY in .env, then:
 docker compose up -d
 docker compose ps            # web should become "healthy"
+curl -I http://127.0.0.1:8090/up
 ```
+
+If `APP_KEY` is still empty, the `app` container stops with a message telling you how to generate it.
+
+### Changing database credentials after the first start
+
+MySQL keeps the credentials it was created with. If you change `DOCKER_DB_*` later (or the first start used other values), the app gets "Access denied" or "Unknown database". On a fresh install **without data** start over with `docker compose down -v && docker compose up -d` (this deletes the database and upload volumes). With real data, change the password inside MySQL instead.
 
 ## 3. Create the owner account
 
@@ -56,7 +58,7 @@ Production requires a strong password (12+ characters, upper and lower case, a n
 
 ## 4. Reverse proxy (HTTPS)
 
-Point your proxy at `http://127.0.0.1:8080` and forward the usual headers. Example for nginx on the host:
+Point your proxy at `http://127.0.0.1:8090` (or your `WEB_PORT`) and forward the usual headers. Example for nginx on the host:
 
 ```nginx
 server {
@@ -64,7 +66,7 @@ server {
     client_max_body_size 20m;
 
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://127.0.0.1:8090;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -74,7 +76,7 @@ server {
 }
 ```
 
-Caddy equivalent: `your-domain.com { reverse_proxy 127.0.0.1:8080 }`.
+Caddy equivalent: `your-domain.com { reverse_proxy 127.0.0.1:8090 }`.
 
 ## Updating
 
@@ -109,7 +111,7 @@ Restore: `docker compose exec -T db sh -c 'mysql -u root -p"$MYSQL_ROOT_PASSWORD
 
 ## Using an existing MySQL server
 
-Remove the `db` service and the `depends_on: db` blocks from `compose.yaml`, remove the `DB_HOST: db` lines, and set `DB_HOST`/`DB_PORT` in `.env`.
+Remove the `db` service, the `depends_on: db` block and the `x-db-credentials` values from `compose.yaml`, then set `DB_*` in `.env`.
 
 ## Verified
 
