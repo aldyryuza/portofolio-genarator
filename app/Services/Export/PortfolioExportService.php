@@ -8,6 +8,8 @@ use App\Models\Education;
 use App\Models\Experience;
 use App\Models\Project;
 use App\Models\SkillGroup;
+use App\Services\QrCodeGenerator;
+use App\Support\QrTarget;
 use App\Support\SiteOwner;
 use Illuminate\Support\Collection;
 
@@ -20,7 +22,10 @@ class PortfolioExportService
 {
     private const GALLERY_LIMIT = 4;
 
-    public function __construct(private SiteOwner $owner) {}
+    public function __construct(
+        private SiteOwner $owner,
+        private QrCodeGenerator $qrCodes,
+    ) {}
 
     public function compose(ExportOptions $options): PortfolioDocument
     {
@@ -58,6 +63,7 @@ class PortfolioExportService
             educations: $withEducation ? Education::query()->published()->chronological()->get() : new Collection,
             certifications: $withEducation ? Certification::query()->published()->chronological()->get() : new Collection,
             skillGroups: $isCv ? SkillGroup::withPublishedSkills() : new Collection,
+            qrPng: $options->includeQr ? $this->qrCodes->png((string) QrTarget::url('home'), 6) : null,
         );
     }
 

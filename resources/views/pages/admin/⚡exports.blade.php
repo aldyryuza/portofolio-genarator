@@ -46,6 +46,8 @@ new #[Title('Exports')] class extends Component
 
     public bool $include_confidential = false;
 
+    public bool $include_qr = false;
+
     public int $max_projects = 12;
 
     public string $template = 'light';
@@ -180,7 +182,7 @@ new #[Title('Exports')] class extends Component
         $this->template = (string) ($config['template'] ?? 'light');
         $this->locale = (string) ($config['locale'] ?? 'en');
 
-        foreach (['include_drafts', 'include_profile', 'include_experience', 'include_education', 'include_gallery', 'include_confidential'] as $flag) {
+        foreach (['include_drafts', 'include_profile', 'include_experience', 'include_education', 'include_gallery', 'include_confidential', 'include_qr'] as $flag) {
             $this->{$flag} = (bool) ($config[$flag] ?? $this->{$flag});
         }
 
@@ -231,6 +233,7 @@ new #[Title('Exports')] class extends Component
             'include_education' => $this->include_education,
             'include_gallery' => $this->include_gallery,
             'include_confidential' => $this->include_confidential,
+            'include_qr' => $this->include_qr,
             'max_projects' => $this->max_projects,
             'template' => $this->template,
             'locale' => $this->locale,
@@ -338,6 +341,7 @@ new #[Title('Exports')] class extends Component
                 <x-form.checkbox name="include_gallery" :label="__('Project galleries')" />
                 <x-form.checkbox name="include_experience" :label="__('Experience')" />
                 <x-form.checkbox name="include_education" :label="__('Education & certifications')" />
+                <x-form.checkbox name="include_qr" :label="__('Add a QR code to your portfolio site')" />
                 <div class="rounded-md border border-dashed border-line-strong p-3">
                     <x-form.checkbox name="include_confidential" :label="__('Include confidential details (internal use only)')" />
                     <p class="form-hint">{{ __('Adds hidden client names, confidential images and confidential notes. Do not share such a file publicly.') }}</p>

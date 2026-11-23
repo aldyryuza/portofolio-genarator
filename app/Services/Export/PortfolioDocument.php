@@ -37,7 +37,16 @@ final readonly class PortfolioDocument
         public Collection $educations,
         public Collection $certifications,
         public Collection $skillGroups = new Collection,
+        public ?string $qrPng = null,
     ) {}
+
+    /**
+     * QR code linking to the site (tracked as a "qr" visit), as a data URI for PDFs.
+     */
+    public function qrDataUri(): ?string
+    {
+        return $this->qrPng === null ? null : 'data:image/png;base64,'.base64_encode($this->qrPng);
+    }
 
     public function title(): string
     {

@@ -11,6 +11,7 @@
             ['route' => 'admin.tags', 'label' => __('Tags'), 'active' => 'admin.tags'],
             ['route' => 'admin.skills', 'label' => __('Skills'), 'active' => 'admin.skill*'],
             ['route' => 'admin.exports', 'label' => __('Exports'), 'active' => 'admin.exports*'],
+            ['route' => 'admin.qr-codes', 'label' => __('QR codes'), 'active' => 'admin.qr-codes*'],
         ],
         __('Career') => [
             ['route' => 'admin.experiences', 'label' => __('Experience'), 'active' => 'admin.experiences'],

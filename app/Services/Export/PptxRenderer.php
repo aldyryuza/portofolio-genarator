@@ -260,6 +260,17 @@ class PptxRenderer
 
         $contact = collect([$document->profile?->public_email, route('home')])->filter()->implode('   ·   ');
         $this->text($slide, $contact, self::MARGIN, 270, 860, 30, 16, color: 'muted');
+
+        if ($document->qrPng !== null && ($qr = @imagecreatefromstring($document->qrPng)) instanceof \GdImage) {
+            $shape = (new Gd)
+                ->setImageResource($qr)
+                ->setRenderingFunction(Gd::RENDERING_PNG)
+                ->setMimeType(Gd::MIMETYPE_PNG)
+                ->setName('QR code')
+                ->setDescription($this->xmlSafe(route('home')));
+            $shape->setResizeProportional(false)->setWidth(150)->setHeight(150)->setOffsetX(self::MARGIN)->setOffsetY(330);
+            $slide->addShape($shape);
+        }
     }
 
     private function blankSlide(Slide $slide): Slide

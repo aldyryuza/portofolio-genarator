@@ -50,6 +50,9 @@
                 @endif
                 <tr><td class="label">{{ __('Website') }}</td><td>{{ route('home') }}</td></tr>
             </table>
+            @if ($qr = $doc->qrDataUri())
+                <img src="{{ $qr }}" alt="{{ __('QR code to :url', ['url' => route('home')]) }}" style="width: 26mm; height: 26mm; margin-top: 4mm;">
+            @endif
         @endif
 
         @if ($doc->projects->isNotEmpty())

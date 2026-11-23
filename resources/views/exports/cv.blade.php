@@ -46,6 +46,12 @@
                     </tr>
                 </table>
             </td>
+            @if ($qr = $doc->qrDataUri())
+                <td style="width: 24mm; text-align: center; vertical-align: top;">
+                    <img src="{{ $qr }}" alt="{{ __('QR code to :url', ['url' => route('home')]) }}" style="width: 22mm; height: 22mm;">
+                    <div class="muted" style="font-size: 6.5pt;">{{ __('Scan for portfolio') }}</div>
+                </td>
+            @endif
             @if ($doc->avatar)
                 <td style="width: 26mm; text-align: right; vertical-align: top;">
                     <img src="{{ $doc->avatar->dataUri() }}" alt="{{ $doc->avatar->alt ?: $doc->ownerName }}" style="width: 24mm; height: 24mm; border: 1px solid {{ $theme['line'] }};">

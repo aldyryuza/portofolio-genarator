@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\ExportDownloadController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\QrCodeDownloadController;
 use App\Http\Controllers\Site\ContactController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\PageController;
@@ -83,6 +84,8 @@ Route::middleware(['auth', 'can:access-admin'])
         Route::livewire('/inbox', 'pages::admin.inbox')->name('inbox');
 
         Route::livewire('/exports', 'pages::admin.exports')->name('exports');
+        Route::livewire('/qr-codes', 'pages::admin.qr-codes')->name('qr-codes');
+        Route::get('/qr-codes/download', QrCodeDownloadController::class)->name('qr-codes.download');
         Route::get('/exports/{exportJob}/download', ExportDownloadController::class)->whereUuid('exportJob')->name('exports.download');
 
         Route::livewire('/categories', 'pages::admin.categories')->name('categories');
