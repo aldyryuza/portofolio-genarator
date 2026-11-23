@@ -21,7 +21,7 @@ php artisan serve             # admin: /login
 | Perintah | Fungsi |
 |---|---|
 | `php artisan portfolio:create-owner` | Membuat akun owner (password diminta, tidak ada default) |
-| `php artisan portfolio:prune [--dry-run]` | Menghapus file media yang sudah dihapus >30 hari dan export lama (dijadwalkan harian) |
+| `php artisan portfolio:prune [--dry-run]` | Menghapus file media yang sudah dihapus >30 hari, export lama, dan data analytics >13 bulan (dijadwalkan harian) |
 | `composer test` | Pint, PHPStan, lalu seluruh test |
 | `DB_CONNECTION=mysql DB_DATABASE=<db_test> php artisan test` | Menjalankan test di MySQL (pakai database khusus test, **bukan** database dev) |
 

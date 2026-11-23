@@ -18,6 +18,7 @@ First complete release of the Personal Portfolio CMS: a single-owner admin, a pu
 | M6 | PDF and PPTX portfolio exports with presets, themes, English/Indonesian headings, owner-only downloads |
 | M7 | Nonce-based CSP and HSTS, accessibility fixes, scheduled storage pruning, MySQL CI job, deployment and backup docs |
 | M7.1 | Light/dark theme (follows the OS, toggle remembered per browser) on the public site, admin and login; self-hosted WOFF2 fonts; stateless `robots.txt`/`sitemap.xml`; Docker images and Compose stack (`docs/DOCKER.md`), `TRUSTED_PROXIES` support |
+| M8 | Project visibility controls (hidden client name, confidential notes and images, opt-in internal exports); export document types: full portfolio, professional CV (PDF) and project case study (PDF/PPTX); QR codes (SVG/PNG, optional on exports, `?ref=qr` tracking); cookie-less analytics with an admin dashboard |
 
 ## Acceptance criteria (`docs/ACCEPTANCE.md`)
 
@@ -51,6 +52,16 @@ First complete release of the Personal Portfolio CMS: a single-owner admin, a pu
 
 \* Only `is-crawlable` fails, because non-production `robots.txt` deliberately disallows everything (login is also `noindex`). In production `robots.txt` allows crawling. Measured on PHP's single-threaded dev server without images; re-run against the production host after deploy.
 
+## Analytics and privacy
+
+Analytics are first-party and cookie-less, so no consent banner is required for them in most jurisdictions; still mention them in your privacy notice if you publish one.
+
+- Stored per event: type, path, project or CV version, external referrer **host** only, `?ref=` marker, device class (mobile/desktop), a daily-rotating keyed hash, and the time.
+- Never stored: IP address, full user agent, full referrer URL, cookies or any identifier that survives a day.
+- Not counted: the logged-in owner, bots and crawlers (incl. Lighthouse), Do-Not-Track and Global Privacy Control, previews, admin, error pages, `robots.txt` and `sitemap.xml`.
+- Retention: about 13 months, enforced by the daily `portfolio:prune` (`--analytics-days`).
+- "Visitors" are unique per day; the same person on two days counts twice.
+
 ## Known limitations
 
 - Admin UI text is English; only export headings have Indonesian translations (`lang/id.json`).
@@ -59,6 +70,8 @@ First complete release of the Personal Portfolio CMS: a single-owner admin, a pu
 - No full-page caching; pages are light and N+1 queries are blocked in development by `preventLazyLoading`.
 - Certificate PDFs are not downloadable by visitors (only the verification link and public images are shown).
 - Contact messages are kept until deleted; there is no automatic retention policy.
+- The CV export is PDF only; PPTX is offered for the portfolio and case-study documents.
+- QR codes always encode a URL of this site (allow-listed targets), by design.
 - The CI workflow has not run yet because the repository has not been pushed.
 
 ## Upgrade / first install
