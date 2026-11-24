@@ -25,6 +25,7 @@ cp .env.example .env
 Optional:
 
 - `WEB_PORT` — host port for nginx (default `8090`). Check it is free: `ss -ltnp | grep :8090`.
+- `WEB_BIND` — address nginx is bound to (default `127.0.0.1`, server-only). To test from another machine without a reverse proxy, set the server IP (e.g. a Tailscale IP) or `0.0.0.0`, set `APP_URL` to that `http://IP:PORT`, and leave `SESSION_SECURE_COOKIE` off until HTTPS is in place.
 - `DOCKER_DB_DATABASE` / `DOCKER_DB_PASSWORD` — database name and root password (defaults `portofolio` / `root`). The database is only reachable inside the Docker network; still, use a stronger password if you ever publish its port. These are applied **only when the `mysql` volume is first created**.
 - `MAIL_*` — real SMTP settings so contact-form notifications are delivered.
 - `SESSION_SECURE_COOKIE=true` — once the site is served over HTTPS.

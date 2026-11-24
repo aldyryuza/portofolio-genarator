@@ -58,6 +58,10 @@ test('HSTS is only sent in production over HTTPS', function () {
 
     app()->detectEnvironment(fn () => 'production');
 
+    // Plain HTTP (e.g. the server reached by IP before TLS) must not upgrade asset requests.
+    $http = $this->get('http://localhost/')->assertHeaderMissing('Strict-Transport-Security');
+    expect(cspOf($http))->not->toContain('upgrade-insecure-requests');
+
     $this->get('https://localhost/')->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     expect(cspOf($this->get('https://localhost/')))->toEndWith('upgrade-insecure-requests');
 });

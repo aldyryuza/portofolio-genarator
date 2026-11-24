@@ -79,7 +79,8 @@ class SecurityHeaders
             ->map(fn (array $sources, string $directive) => $directive.' '.implode(' ', $sources))
             ->implode('; ');
 
-        return app()->isProduction() ? $policy.'; upgrade-insecure-requests' : $policy;
+        // Upgrading on a plain-HTTP site (e.g. reached by IP before TLS is set up) would block every asset.
+        return app()->isProduction() && $request->isSecure() ? $policy.'; upgrade-insecure-requests' : $policy;
     }
 
     private function usesLivewire(Request $request): bool
