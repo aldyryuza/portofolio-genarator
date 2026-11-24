@@ -3,8 +3,8 @@
 # Variables come from the .env file next to this file (or the file given with
 # `docker compose --env-file`). The same file is passed to the containers.
 #
-# Database: the bundled MySQL is reachable only inside this stack's network (no
-# host port), so it never clashes with another MySQL on the server. The app uses
+# Database: the bundled MySQL is published on 127.0.0.1:3307 (DB_FORWARD_PORT),
+# so it does not clash with another MySQL on port 3306. The app uses
 # the root account; defaults are database "portofolio", password "root".
 # Override with DOCKER_DB_DATABASE / DOCKER_DB_PASSWORD (the DB_* values in .env
 # are for local development and are ignored here). These values are applied only
@@ -82,8 +82,9 @@ services:
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     volumes:
       - mysql:/var/lib/mysql
-    # No host port on purpose. To reach the database from a tool on the server, add:
-    #   ports: ["127.0.0.1:${DB_FORWARD_PORT:-33061}:3306"]
+    ports:
+      # For database tools on the server. The app itself talks to db:3306 inside Docker.
+      - "${DB_FORWARD_BIND:-127.0.0.1}:${DB_FORWARD_PORT:-3307}:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 5s
